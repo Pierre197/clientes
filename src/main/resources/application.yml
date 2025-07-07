@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: clientes-service
+
+  data:
+    mongodb:
+      uri: mongodb://admin:password123@localhost:27017/clientapi?authSource=clientapi
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+topic:
+  customer:
+    created: customer-created-topic
+    consulted: customer-consulted-topic
+
+logging:
+  level:
+    org.springframework: INFO
+    com.pierre: DEBUG
+    org.springframework.web.bind.MethodArgumentNotValidException: DEBUG
+    org.springframework.web.reactive.function.server: DEBUG
+    org.springframework.http.converter: DEBUG
+
+jwt:
+  secret: mysupersecuresecretkeyof32chars!!
+  expiration-ms: 3600000
