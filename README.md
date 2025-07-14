@@ -42,11 +42,13 @@ com.pierre.clientes
 │   ├── config
 │   │   ├── kafka
 │   │   ├── openapi
-│   │   └── security
+│   │   ├── security
+|   |   └── web
 │   ├── messaging.kafka
 │   │   ├── consumer (por implementar)
 │   │   └── publisher
 │   ├── persistence
+│   │   └── mapper
 │   ├── rest
 │   └── util
 ├── resources
@@ -97,9 +99,7 @@ Ejemplo de Headers Enviados en Eventos Kafka
 
 {
   "consumerId": "user123",
-  "traceparent": "00-abc123-xyz456-01",
-  "deviceType": "mobile",
-  "deviceId": "device-001"
+  "traceparent": "00-abc123-xyz456-01"
 }
 
 Variables de Entorno
@@ -107,18 +107,21 @@ Variables de Entorno
 Agregar en application.yml:
 
 jwt:
-  secret: tu_clave_secreta
+  secret: mysupersecuresecretkeyof32chars!!
+  expiration-ms: 3600000
 
 spring:
-  kafka:
-    bootstrap-servers: localhost:9092
   data:
     mongodb:
-      uri: mongodb://localhost:27017/clientesdb
+      uri: mongodb://admin:password123@localhost:27017/clientapi?authSource=clientapi
+
+  kafka:
+    bootstrap-servers: localhost:9092
 
 topic:
   customer:
     created: customer-created-topic
+    consulted: customer-consulted-topic
 
 Docker Compose
 
@@ -131,8 +134,6 @@ Apache Kafka
 MongoDB
 
 mongo-express (explorador web opcional)
-
-Kafdrop (dashboard web para Kafka opcional)
 
 Buenas Prácticas Aplicadas
 
