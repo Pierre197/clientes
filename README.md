@@ -125,7 +125,7 @@ topic:
 
 Docker Compose
 
-Para facilitar el despliegue local de Kafka y MongoDB, se agregará un archivo docker-compose.yml en la raíz del proyecto. Este archivo levantará:
+Para facilitar el despliegue local de Kafka y MongoDB, se agregará un archivo docker-compose.yml y un archivo mongo-init.js en la raíz del proyecto. Este archivo levantará:
 
 Zookeeper
 
