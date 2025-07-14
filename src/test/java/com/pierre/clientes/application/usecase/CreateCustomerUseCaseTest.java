@@ -17,40 +17,55 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDate;
+
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CreateCustomerUseCaseTest {
+class CreateCustomerUseCaseTest {
 
     @Mock
-    private CustomerRepository customerRepository;
+    CustomerRepository customerRepository;
 
     @Mock
-    private CustomerMapper customerMapper;
+    CustomerMapper customerMapper;
 
     @Mock
-    private ReactiveKafkaEventPublisher eventPublisher;
+    ReactiveKafkaEventPublisher eventPublisher;
 
     @InjectMocks
-    private CreateCustomerUseCaseImpl createCustomerUseCase;
+    CreateCustomerUseCaseImpl createCustomerUseCase;
 
     @Test
     void shouldCreateCustomerSuccessfully() {
-        CustomerRequestDTO request = new CustomerRequestDTO("Pierre", "Castillo", "Llontop");
-        Customer domainCustomer = new Customer("Pierre", "Castillo", "Llontop");
-        CustomerResponseDTO response = new CustomerResponseDTO("1", "Pierre Castillo Llontop");
-        RequestHeaders headers = new RequestHeaders("consumerId", "traceparent", "deviceType", "deviceId");
+        // ----- Arrange -----
+        CustomerRequestDTO request =
+                new CustomerRequestDTO("Pierre", "Castillo", "Llontop", 30, LocalDate.of(1994, 7, 14));
+
+        Customer domainCustomer = mock(Customer.class); // evitamos constructor real
+        CustomerResponseDTO response = new CustomerResponseDTO(
+                "1",
+                "Pierre Castillo Llontop",
+                30,
+                LocalDate.of(1994, 7, 19),
+                LocalDate.of(2074, 7, 19)
+        );
+        RequestHeaders headers = new RequestHeaders("consumerId", "traceparent");
 
         CustomerEvent event = mock(CustomerEvent.class);
 
         when(customerMapper.toDomain(request)).thenReturn(domainCustomer);
         when(customerRepository.save(domainCustomer)).thenReturn(Mono.just(domainCustomer));
         when(customerMapper.toResponse(domainCustomer)).thenReturn(response);
-        when(customerMapper.toEvent(eq(domainCustomer), eq(headers), anyString(), anyString(), anyString())).thenReturn(event);
+        when(customerMapper.toEvent(eq(domainCustomer), eq(headers), anyString(), anyString(), anyString()))
+                .thenReturn(event);
         when(eventPublisher.publishCreateEvent(eq(event), eq(headers))).thenReturn(Mono.empty());
 
+        // ----- Act -----
         Mono<CustomerResponseDTO> result = createCustomerUseCase.execute(request, headers);
 
+        // ----- Assert -----
         StepVerifier.create(result)
                 .expectNext(response)
                 .verifyComplete();
@@ -62,4 +77,3 @@ public class CreateCustomerUseCaseTest {
         verify(eventPublisher).publishCreateEvent(eq(event), eq(headers));
     }
 }
-

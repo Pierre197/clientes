@@ -32,7 +32,8 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.CREATED)
     public Mono<CustomerResponseDTO> create(
             @Valid @RequestBody CustomerRequestDTO dto,
-            @Parameter(hidden = true) @RequestHeader HttpHeaders headers){
+            @Parameter(hidden = true) @RequestHeader HttpHeaders headers) {
+
         RequestHeaders requestHeaders = headerExtractor.extract(headers);
         return createCustomerUseCase.execute(dto, requestHeaders);
     }
@@ -42,8 +43,9 @@ public class CustomerController {
         return getCustomerByIdUseCase.execute(id);
     }
 
-    @GetMapping()
-    public Flux<CustomerResponseDTO> getAll(@Parameter(hidden = true) @RequestHeader HttpHeaders headers){
+    @GetMapping
+    public Flux<CustomerResponseDTO> getAll(
+            @Parameter(hidden = true) @RequestHeader HttpHeaders headers) {
         RequestHeaders requestHeaders = headerExtractor.extract(headers);
         return getAllCustomerUseCase.getAll(requestHeaders);
     }

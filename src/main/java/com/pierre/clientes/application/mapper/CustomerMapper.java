@@ -5,10 +5,12 @@ import com.pierre.clientes.domain.model.Customer;
 import com.pierre.clientes.application.dto.CustomerRequestDTO;
 import com.pierre.clientes.application.dto.CustomerResponseDTO;
 import com.pierre.clientes.domain.model.shared.RequestHeaders;
+import com.pierre.clientes.infrastructure.util.TimeUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -17,15 +19,30 @@ import java.time.format.DateTimeFormatter;
 public interface CustomerMapper {
 
     default Customer toDomain(CustomerRequestDTO dto){
-        return new Customer(
+        return Customer.create(
                 dto.firstName(),
                 dto.lastName(),
-                dto.secondLastName()
+                dto.secondLastName(),
+                dto.age(),
+                dto.birthdate()
         );
     }
 
-    @Mapping(target = "fullName", expression = "java(buildFullName(customer))")
-    CustomerResponseDTO toResponse(Customer customer);
+    default CustomerResponseDTO toResponse(Customer customer) {
+
+        LocalDate birthdate = customer.getBirthdate();
+        LocalDate estimatedDeathDate = birthdate != null
+                ? birthdate.plusYears(80)
+                : null; // o LocalDate.of(1900, 1, 1)
+
+        return new CustomerResponseDTO(
+                customer.getId(),
+                buildFullName(customer),
+                customer.getAge(),
+                customer.getBirthdate(),
+                estimatedDeathDate
+        );
+    }
 
     default String buildFullName(Customer customer){
         return  String.join(" ",
@@ -35,18 +52,13 @@ public interface CustomerMapper {
     }
 
     // Evento con Customer (creación)
-    default CustomerEvent toEvent(Customer customer, RequestHeaders headers, String inboundJson, String outboundJson, String transactionCode){
+    default CustomerEvent toEvent(Customer customer, RequestHeaders headers, String inboundJson, String outboundJson, String transactionCode) {
         return new CustomerEvent(
-                "application-" + headers.consumerId(),
-                headers.consumerId(),
-                String.valueOf(System.currentTimeMillis()),
-                headers.consumerId(),
-                OffsetDateTime.now(ZoneOffset.of("-05:00")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")),
-                customer.getId(),
-                "default-region",
-                "0000",
-                String.valueOf(Instant.now().getEpochSecond()),
-                headers.traceparent(),
+                "clientes-service",                     // applicationId
+                headers.consumerId(),                   // consumerId
+                customer.getId(),                       // customerId
+                TimeUtils.currentTimestamp(),
+                headers.traceparent(),                  // traceId
                 inboundJson,
                 outboundJson,
                 transactionCode
@@ -56,15 +68,10 @@ public interface CustomerMapper {
     // Evento SIN Customer (Consulta)
     default CustomerEvent toEvent(RequestHeaders headers, String inboundJson, String outboundJson, String transactionCode){
         return new CustomerEvent(
-                "application-" + headers.consumerId(),
+                "clientes-service",
                 headers.consumerId(),
-                String.valueOf(System.currentTimeMillis()),
-                headers.consumerId(),
-                OffsetDateTime.now(ZoneOffset.of("-05:00")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")),
-                null, // customerId no aplica en consulta general
-                "default-region",
-                "0000",
-                String.valueOf(Instant.now().getEpochSecond()),
+                null,                                     // No customerId
+                TimeUtils.currentTimestamp(),
                 headers.traceparent(),
                 inboundJson,
                 outboundJson,

@@ -34,21 +34,22 @@ public class CreateCustomerUseCaseImpl implements CreateCustomerUseCase {
         return customerRepository.save(customer)
                 .flatMap(saved -> {
                    CustomerResponseDTO response = customerMapper.toResponse(saved);
-                   return Mono.zip(
-                           Mono.fromSupplier(()-> JsonUtils.safeWriteASString(dto)),
-                           Mono.fromSupplier(()-> JsonUtils.safeWriteASString(response))
-                   ).flatMap(tuple -> {
-                       String inbound = tuple.getT1();
-                       String outbound = tuple.getT2();
-                       String transactionCode = TransactionCodeResolver.resolveTransactionCode(this);
-                       CustomerEvent event = customerMapper.toEvent(saved, headers, inbound, outbound, transactionCode);
 
-                       return eventPublisher.publishCreateEvent(event, headers)
-                               .thenReturn(response);
-                   }).onErrorResume(e->{
-                       log.error("Error al serializar o enviar evento", e);
-                       return Mono.just(response);
-                   });
+                   //Serializar request y response como strings para evento
+                    String inbound = JsonUtils.toJson(dto);
+                    String outbound = JsonUtils.toJson(response);
+                    String transactionCode = TransactionCodeResolver.resolveTransactionCode(this);
+
+                    //Generar evento generico CustomerEvent
+                    CustomerEvent event = customerMapper.toEvent(saved, headers, inbound, outbound, transactionCode);
+
+                    //Enviar a Kafka, y retornar response incluso si falla el publish
+                    return eventPublisher .publishCreateEvent(event, headers)
+                            .thenReturn(response)
+                            .onErrorResume(e -> {
+                                log.error("Error al enviar evento a kafka", e);
+                                return Mono.just(response);
+                            });
                 });
     }
 

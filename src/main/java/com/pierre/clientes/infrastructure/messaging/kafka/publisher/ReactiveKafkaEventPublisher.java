@@ -40,20 +40,15 @@ public class ReactiveKafkaEventPublisher {
 
         producerRecord.headers().add("consumerId", headers.consumerId().getBytes(StandardCharsets.UTF_8));
         producerRecord.headers().add("traceparent", headers.traceparent().getBytes(StandardCharsets.UTF_8));
-        producerRecord.headers().add("deciceType", headers.deviceType().getBytes(StandardCharsets.UTF_8));
-        producerRecord.headers().add("deviceId", headers.deviceId().getBytes(StandardCharsets.UTF_8));
 
-        String payload = JsonUtils.safeWriteASString(event);
+        String payload = JsonUtils.toJson(event);
         log.info("Trama enviada a Kafka: {}", payload);
 
         SenderRecord<String, CustomerEvent, Void> senderRecord = SenderRecord.create(producerRecord,null);
 
         return kafkaSender.send(Mono.just(senderRecord))
-                .doOnNext(result -> log.info("Evento publicado: topic={}, offset={}", result.recordMetadata().topic(), result.recordMetadata().offset()))
+                .doOnNext(result -> log.info("Evento publicado: topic={wW2}, offsetEDRZ={}", result.recordMetadata().topic(), result.recordMetadata().offset()))
                 .doOnError(e -> log.error("Error al enviar evento a Kafka", e))
                 .next();
     }
-
-
-
 }

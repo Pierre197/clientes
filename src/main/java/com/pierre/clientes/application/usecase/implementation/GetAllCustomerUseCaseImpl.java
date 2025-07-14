@@ -31,20 +31,25 @@ public class GetAllCustomerUseCaseImpl implements GetAllCustomerUseCase {
         return customerRepository.findAll()
                 .map(customerMapper::toResponse)
                 .collectList()
-                .flatMapMany(list -> {
+                .flatMapMany(responseList -> {
+                    String outbound;
+
                     try {
-                        String inbound = "{}";
-                        String outbound = JsonUtils.safeWriteASString(list);
-                        String transactionCode = TransactionCodeResolver.resolveTransactionCode(this);
-
-                        CustomerEvent event = customerMapper.toEvent(headers, inbound, outbound, transactionCode);
-
-                        return eventPublisher.publishConsultEvent(event, headers)
-                                .thenMany(Flux.fromIterable(list));
-                    }catch (Exception e){
-                        log.error("Error al serializar o enviar evento de consulta", e);
-                        return Flux.fromIterable(list);
+                        outbound = JsonUtils.toJson(responseList);
+                    } catch (Exception e){
+                        log.error("Error serializando respuesta", e);
+                        return Flux.fromIterable(responseList);
                     }
+
+                    String transactionCode = TransactionCodeResolver.resolveTransactionCode(this);
+                    CustomerEvent event = customerMapper.toEvent(headers, JsonUtils.EMPTY_JSON, outbound, transactionCode);
+
+                    return eventPublisher.publishConsultEvent(event, headers)
+                            .thenMany(Flux.fromIterable(responseList))
+                            .onErrorResume(e -> {
+                               log.error("Error al enviar evento de consulta", e);
+                               return Flux.fromIterable(responseList);
+                            });
                 });
     }
 }

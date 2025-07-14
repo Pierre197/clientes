@@ -9,9 +9,7 @@ public class HeaderExtractor {
     public RequestHeaders extract(HttpHeaders headers){
         return  new RequestHeaders(
                 headers.getFirst("consumerId"),
-                headers.getFirst("traceparent"),
-                headers.getFirst("deviceType"),
-                headers.getFirst("deviceId")
+                headers.getFirst("traceparent")
         );
     }
 }

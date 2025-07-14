@@ -11,36 +11,24 @@ public class OpenApiHeaderConfig {
 
     @Bean
     public OpenApiCustomizer customerHeaderCustomizer(){
-        return openApi -> openApi.getPaths().forEach((path, pathItem) ->
-                {
-                    if (path.equals("/auth/login")){
-                        return;
-                    }
+        return openApi -> openApi.getPaths().forEach((path, pathItem) -> {
+            if (path.equals("/auth/login")){
+                return;
+            }
 
-                    pathItem.readOperations().forEach(operation -> {
-                        operation.addParametersItem(new HeaderParameter()
-                                .name("consumerId")
-                                .description("Identificador del consumidor")
-                                .required(true)
-                                .schema(new StringSchema()));
-                        operation.addParametersItem(new HeaderParameter()
-                                .name("traceparent")
-                                .description("ID de trazabilidad (formato W3C Trace Context)")
-                                .required(true)
-                                .schema(new StringSchema()));
-                        operation.addParametersItem(new HeaderParameter()
-                                .name("deviceType")
-                                .description("Tipo de dispositivo")
-                                .required(true)
-                                .schema(new StringSchema()));
-                        operation.addParametersItem(new HeaderParameter()
-                                .name("deviceId")
-                                .description("Id único del dispositivo que realiza la petición")
-                                .required(true)
-                                .schema(new StringSchema()));
-                    });
+            pathItem.readOperations().forEach(operation -> {
+                operation.addParametersItem(new HeaderParameter()
+                        .name("consumerId")
+                        .description("Identificador del consumidor")
+                        .required(true)
+                        .schema(new StringSchema()));
 
-                });
-
+                operation.addParametersItem(new HeaderParameter()
+                        .name("traceparent")
+                        .description("ID de trazabilidad (formato W3C Trace Context)")
+                        .required(true)
+                        .schema(new StringSchema()));
+            });
+        });
     }
 }
